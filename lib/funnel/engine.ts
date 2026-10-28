@@ -111,9 +111,9 @@ async function upsertContact(igId: string, igsid: string, patch: Prisma.FunnelCo
   return prisma.funnelContact.upsert({
     where: { instagramAccountId_igsid: { instagramAccountId: igId, igsid } },
     create: {
+      ...(patch as Omit<Prisma.FunnelContactCreateInput, "instagramAccountId" | "igsid">),
       instagramAccountId: igId,
       igsid,
-      ...(patch as Prisma.FunnelContactCreateInput),
     },
     update: patch,
   });
