@@ -26,6 +26,7 @@ import {
   TokenExpiredError,
   getUserFollowStatus,
   sendCommentReply,
+  sendDirectAudio,
   sendDirectMessage,
   sendDirectMessageWithButton,
   sendDirectMessageWithLinkButton,
@@ -39,6 +40,7 @@ import {
   type InstagramContext,
 } from "@/lib/instagram/provider";
 import { matchKeywords } from "@/lib/utils/keyword-matcher";
+import { extractAudioTag } from "@/lib/utils/audio-tag";
 import { reserveDMSlot, releaseDMSlot } from "@/lib/utils/rate-limiter";
 import {
   releaseWorkspaceDMReservation,
@@ -1251,15 +1253,28 @@ async function processFollowUp(job: Job<ProcessFollowUpJob>): Promise<void> {
   }
 
   try {
-    await sendDirectMessage({
-      context: accessToken,
-      instagramAccountId: automation.instagramAccount.instagramId,
-      userId: userId,
-      message: renderMessageWithoutLink({
-        message: automation.followUpMessage,
-        commenterName: commenterName ?? null,
-      }),
-    });
+    // Optional voice note: a leading [audio:https://...] line is sent first
+    // as an audio message, then the remaining text (if any).
+    const { audioUrl, text } = extractAudioTag(automation.followUpMessage);
+    if (audioUrl) {
+      await sendDirectAudio({
+        context: accessToken,
+        instagramAccountId: automation.instagramAccount.instagramId,
+        userId: userId,
+        audioUrl,
+      });
+    }
+    if (text) {
+      await sendDirectMessage({
+        context: accessToken,
+        instagramAccountId: automation.instagramAccount.instagramId,
+        userId: userId,
+        message: renderMessageWithoutLink({
+          message: text,
+          commenterName: commenterName ?? null,
+        }),
+      });
+    }
   } catch (error) {
     console.log(
       "[DM Worker] Failed to send follow-up message:",

@@ -216,6 +216,27 @@ export async function sendDirectMessage({
   return sendZernioMessage({ context, recipientId: userId, text: message });
 }
 
+export async function sendDirectAudio({
+  context,
+  instagramAccountId,
+  userId,
+  audioUrl,
+}: {
+  context: InstagramContext;
+  instagramAccountId: string;
+  userId: string;
+  audioUrl: string;
+}) {
+  if (context.provider !== "META")
+    throw new Error("Audio messages are only supported on direct Meta connections");
+  return meta.sendDirectAudio(
+    context.accessToken,
+    instagramAccountId,
+    userId,
+    audioUrl
+  );
+}
+
 export async function sendDirectMessageWithLinkButton({
   context,
   instagramAccountId,
