@@ -2,7 +2,7 @@ import { prisma } from '@/lib/db/client';
 import { getDMQueue, MESSAGE_JOB_NAME, POSTBACK_JOB_NAME } from '@/lib/queue/client';
 import { parseCommentEvents, parseMessageEvents, parsePostbackEvents, parseReadEvents } from '@/lib/meta/webhook';
 import { Prisma, type InstagramProvider } from '@/app/generated/prisma/client';
-import { enqueueFunnelWebhook } from '@/lib/funnel/engine';
+import { enqueueFunnelWebhook, isFunnelEnabled } from '@/lib/funnel/engine';
 
 const OPENING_DM_READ_FALLBACK_DELAY_MS = 5 * 60 * 1000;
 type InstagramPayload = Parameters<typeof parseCommentEvents>[0];
@@ -41,6 +41,16 @@ export async function processInstagramWebhook({ payload: incoming, provider, wor
   }
 
   try {
+    // With the ATOM funnel on, it owns every comment and DM: campaigns would
+    // answer the same events a second time.
+    if (provider === 'META' && isFunnelEnabled()) {
+      await prisma.webhookEvent.update({
+        where: { id: webhookEvent.id },
+        data: { status: "PROCESSED", processedAt: new Date(), workspaceId: accounts[0]?.workspaceId },
+      });
+      return;
+    }
+
     const commentEvents = parseCommentEvents(
       payload as Parameters<typeof parseCommentEvents>[0]
     );

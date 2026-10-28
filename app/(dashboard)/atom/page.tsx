@@ -49,10 +49,12 @@ async function unpause(formData: FormData) {
   revalidatePath("/atom");
 }
 
-type Props = { searchParams: Promise<{ q?: string; tag?: string }> };
+type Props = { searchParams: Promise<{ q?: string | string[]; tag?: string | string[] }> };
 
 export default async function AtomFunnelPage({ searchParams }: Props) {
-  const { q, tag } = await searchParams;
+  const sp = await searchParams;
+  const q = typeof sp.q === "string" && sp.q ? sp.q : undefined;
+  const tag = typeof sp.tag === "string" && sp.tag ? sp.tag : undefined;
   const igIds = await workspaceIgIds();
   const contacts = await prisma.funnelContact.findMany({
     where: {

@@ -11,7 +11,7 @@ import { prisma } from "@/lib/db/client";
 import { getBaseUrl } from "@/lib/env";
 import { decryptToken } from "@/lib/meta/oauth";
 import { getRedisConnection } from "@/lib/queue/client";
-import type { Prisma } from "@/app/generated/prisma/client";
+import type { FunnelContact, Prisma } from "@/app/generated/prisma/client";
 import { aiReply, isAiEnabled, type AiTurn } from "./ai";
 import {
   AI_GREETING,
@@ -50,6 +50,7 @@ export function isFunnelEnabled(): boolean {
 }
 
 type EventJob = { kind: "event"; event: FunnelEvent };
+// runId "recheck" = delayed second look at the follow gate (Instagram reports new follows late).
 type StepJob = { kind: "step"; contactId: string; node: NodeId; runId: string };
 type FunnelJob = EventJob | StepJob;
 
@@ -61,8 +62,9 @@ function getFunnelQueue(): Queue<FunnelJob> {
       defaultJobOptions: {
         // One attempt: a retry could send the same DM twice.
         attempts: 1,
-        removeOnComplete: { count: 2000 },
-        removeOnFail: { count: 2000 },
+        // Keep finished jobs a day so a late Meta redelivery is still deduplicated.
+        removeOnComplete: { age: 86400 },
+        removeOnFail: { age: 86400 },
       },
     });
   }
@@ -80,7 +82,7 @@ export async function enqueueFunnelWebhook(payload: unknown): Promise<void> {
       event.type === "comment"
         ? `c_${event.commentId}`
         : event.type === "postback"
-          ? `p_${safeId(event.mid ?? `${event.userId}${event.payload}${Date.now()}`)}`
+          ? `p_${safeId(event.mid ?? `${event.userId}${event.payload}${Math.floor(Date.now() / 10_000)}`)}`
           : `m_${safeId(event.mid)}`;
     await q.add("event", { kind: "event", event }, {
       jobId: `funnel_${key}`,
@@ -92,7 +94,7 @@ export async function enqueueFunnelWebhook(payload: unknown): Promise<void> {
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
-type Contact = Awaited<ReturnType<typeof prisma.funnelContact.findUniqueOrThrow>>;
+type Contact = FunnelContact;
 type Ctx = { token: string; igId: string; contact: Contact; commentId?: string };
 type ContactData = { ai?: AiTurn[]; aiGreetedAt?: string; socioRetries?: number; socioHandle?: string; log?: string[] };
 
@@ -164,16 +166,32 @@ async function sendMessage(ctx: Ctx, m: FunnelMessage, useComment: boolean) {
         m.links.map((l) => ({ title: l.title, url: l.tag ? buildTaggedLink(ctx.contact.id, l.tag, l.url) : l.url }))
       );
     case "audio":
-      return sendAudio(ctx.token, ctx.igId, to, `${getBaseUrl()}${m.path}`);
+      try {
+        return await sendAudio(ctx.token, ctx.igId, to, `${getBaseUrl()}${m.path}`);
+      } catch (error) {
+        await reportError("audio", error);
+        return undefined;
+      }
   }
 }
 
-async function runNode(ctx: Ctx, id: NodeId, depth = 0): Promise<void> {
+type RunOpts = { fromTap?: boolean; recheck?: boolean };
+
+async function runNode(ctx: Ctx, id: NodeId, depth = 0, opts: RunOpts = {}): Promise<void> {
   if (depth > 5) return;
 
   if (id === "follow") {
     // «Condición #3»: unknown counts as following, like OpenReply's follow gate.
     const follows = await followsBusiness(ctx.token, ctx.contact.igsid);
+    if (follows === false && opts.fromTap && !opts.recheck) {
+      // They just tapped «Ya te sigo ✅»: Instagram may not know yet. Look again in 20 s.
+      await getFunnelQueue().add(
+        "step",
+        { kind: "step", contactId: ctx.contact.id, node: "follow", runId: "recheck" },
+        { delay: 20_000, jobId: `funnel_recheck_${ctx.contact.id}_${Math.floor(Date.now() / 20_000)}` }
+      );
+      return;
+    }
     return runNode(ctx, follows === false ? "sigueme" : "califica", depth + 1);
   }
 
@@ -241,8 +259,8 @@ async function onMessage(e: Extract<FunnelEvent, { type: "message" }>) {
   if (e.quickReply?.startsWith(FUNNEL_PREFIX)) {
     const node = e.quickReply.slice(FUNNEL_PREFIX.length) as NodeId;
     if (node in NODES || node === "follow") {
-      if (contact.awaiting) await prisma.funnelContact.update({ where: { id: contact.id }, data: { awaiting: null } }).then((c) => (ctx.contact = c));
-      return runNode(ctx, node);
+      if (contact.awaiting) ctx.contact = await prisma.funnelContact.update({ where: { id: contact.id }, data: { awaiting: null } });
+      return runNode(ctx, node, 0, { fromTap: true });
     }
   }
 
@@ -250,7 +268,7 @@ async function onMessage(e: Extract<FunnelEvent, { type: "message" }>) {
   if (contact.awaiting === "socio_img") {
     const data = dataOf(contact);
     if (e.hasImage) {
-      ctx.contact = await prisma.funnelContact.update({ where: { id: contact.id }, data: { awaiting: null } });
+      await saveData(ctx, { ...data, socioRetries: 0 }, { awaiting: null });
       return runNode(ctx, "socio_handle");
     }
     const retries = (data.socioRetries ?? 0) + 1;
@@ -307,9 +325,12 @@ async function onPostback(e: Extract<FunnelEvent, { type: "postback" }>) {
   if (!(node in NODES)) return;
   const acc = await loadAccount(e.igId);
   if (!acc) return;
-  const contact = await upsertContact(e.igId, e.userId, { lastUserAt: new Date() });
+  let contact = await upsertContact(e.igId, e.userId, { lastUserAt: new Date() });
   if (isPaused(contact)) return;
-  await runNode({ ...acc, contact }, node);
+  if (contact.awaiting) {
+    contact = await prisma.funnelContact.update({ where: { id: contact.id }, data: { awaiting: null } });
+  }
+  await runNode({ ...acc, contact }, node, 0, { fromTap: true });
 }
 
 async function onEcho(e: Extract<FunnelEvent, { type: "echo" }>) {
@@ -327,7 +348,13 @@ async function onEcho(e: Extract<FunnelEvent, { type: "echo" }>) {
 
 async function onStep(job: StepJob) {
   const contact = await prisma.funnelContact.findUnique({ where: { id: job.contactId } });
-  if (!contact || contact.runId !== job.runId || isPaused(contact)) return;
+  if (!contact || isPaused(contact)) return;
+  if (job.runId === "recheck") {
+    const acc = await loadAccount(contact.instagramAccountId);
+    if (acc) await runNode({ ...acc, contact }, "follow", 0, { fromTap: true, recheck: true });
+    return;
+  }
+  if (contact.runId !== job.runId) return;
   const rule = FOLLOW_UPS.find((f) => f.node === job.node);
   if (rule?.skipIfTags.some((t) => contact.tags.includes(t))) return;
   const acc = await loadAccount(contact.instagramAccountId);
@@ -355,15 +382,15 @@ export function createFunnelWorker(): Worker<FunnelJob> | null {
     return null;
   }
   console.log("[ATOM funnel] Started");
-  return new Worker<FunnelJob>(FUNNEL_QUEUE, processFunnelJob, {
+  const worker = new Worker<FunnelJob>(FUNNEL_QUEUE, processFunnelJob, {
     connection: getRedisConnection(),
-    concurrency: 3,
+    // One job at a time: two messages from the same person can never race
+    // and send a step twice. Volume is low, so this is fast enough.
+    concurrency: 1,
+    // A crashed job is not retried: a retry could send the same DM twice.
+    maxStalledCount: 0,
   });
-}
-
-/** Used by the tagged redirect links. */
-export async function addTagToContact(contactId: string, tag: string) {
-  const contact = await prisma.funnelContact.findUnique({ where: { id: contactId } });
-  if (!contact || contact.tags.includes(tag)) return;
-  await prisma.funnelContact.update({ where: { id: contactId }, data: { tags: [...contact.tags, tag] } });
+  worker.on("error", (err) => console.error("[ATOM funnel] worker error:", err.message));
+  worker.on("failed", (job, err) => console.error(`[ATOM funnel] job ${job?.id} failed:`, err.message));
+  return worker;
 }

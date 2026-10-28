@@ -1256,13 +1256,17 @@ async function processFollowUp(job: Job<ProcessFollowUpJob>): Promise<void> {
     // Optional voice note: a leading [audio:https://...] line is sent first
     // as an audio message, then the remaining text (if any).
     const { audioUrl, text } = extractAudioTag(automation.followUpMessage);
-    if (audioUrl) {
-      await sendDirectAudio({
-        context: accessToken,
-        instagramAccountId: automation.instagramAccount.instagramId,
-        userId: userId,
-        audioUrl,
-      });
+    if (audioUrl && accessToken.provider === "META") {
+      try {
+        await sendDirectAudio({
+          context: accessToken,
+          instagramAccountId: automation.instagramAccount.instagramId,
+          userId: userId,
+          audioUrl,
+        });
+      } catch (error) {
+        console.log("[DM Worker] Failed to send follow-up audio:", formatError(error));
+      }
     }
     if (text) {
       await sendDirectMessage({
