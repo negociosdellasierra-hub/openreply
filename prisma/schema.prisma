@@ -419,3 +419,24 @@ model PostbackDelivery {
   id String @id
   createdAt DateTime @default(now())
 }
+
+// ATOM funnel: one row per Instagram user that entered the custom funnel.
+// Tags mirror the ManyChat ones (compro_atom, no_por_ahora, paso_califica…).
+model FunnelContact {
+  id                 String    @id @default(cuid())
+  instagramAccountId String
+  igsid              String
+  username           String?
+  tags               String[]  @default([])
+  source             String?
+  awaiting           String?
+  runId              String?
+  pausedUntil        DateTime?
+  lastUserAt         DateTime?
+  data               Json      @default("{}")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([instagramAccountId, igsid])
+  @@index([instagramAccountId])
+}
