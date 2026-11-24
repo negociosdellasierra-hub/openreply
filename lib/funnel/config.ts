@@ -275,7 +275,7 @@ export const NODES: Record<NodeId, FunnelNode> = {
         { kind: "audio", path: AUDIOS.cupon },
         {
           kind: "text",
-          text: "Tu cupón 🎁 QUEDATE10\n\nTe da 10% de descuento. Lo pegas al pagar en Hotmart, donde dice «¿Tienes un cupón?».\n\n👉 https://proyectoatom.lat",
+          text: "Tu cupón 🎁 QUEDATE10\n\nTe da 10% de descuento. Lo pegas al pagar, donde dice «Promo code».\n\n⚠️ Ojo: ATOM solo se compra desde mi página. Si te mandan otro link o ves otro nombre, no es mío.\n\n👉 https://proyectoatom.lat",
         },
       ],
     },
@@ -285,7 +285,7 @@ export const NODES: Record<NodeId, FunnelNode> = {
       default: [
         {
           kind: "text",
-          text: "¡Bienvenido bro! 🎉\n\nRevisa tu correo: Hotmart ya te mandó el acceso. Descarga los archivos de «Descarga tu ATOM» y abre EMPIEZA-AQUI.html.\n\nSi te trabas en algo me escribes y lo sacamos juntos 🚀",
+          text: "¡Bienvenido bro! 🎉\n\nRevisa tu correo: Whop (Proyecto ATOM) ya te mandó el acceso. Descarga los archivos de «Descarga tu ATOM» y abre EMPIEZA-AQUI.html.\n\nSi te trabas en algo me escribes y lo sacamos juntos 🚀",
         },
       ],
     },
@@ -306,7 +306,7 @@ export const NODES: Record<NodeId, FunnelNode> = {
       default: [
         {
           kind: "text",
-          text: "Normal dudar bro, yo también dudaría 😅\n\nTe hago una promesa: si te trabas instalándolo o haciendo tu primer video, me escribes por aquí y te ayudo yo hasta que salga.\n\nY si aun así no te sirve, en los primeros 7 días te devuelven el 100% desde Hotmart. No pierdes nada 🤙\n\n👉 https://proyectoatom.lat",
+          text: "Normal dudar bro, yo también dudaría 😅\n\nTe hago una promesa: si te trabas instalándolo o haciendo tu primer video, me escribes por aquí y te ayudo yo hasta que salga.\n\nY si aun así no te sirve, tienes 7 días de garantía para tu primer video. No pierdes nada 🤙\n\n👉 https://proyectoatom.lat",
         },
       ],
     },
@@ -353,7 +353,7 @@ export const NODES: Record<NodeId, FunnelNode> = {
         { kind: "text", text: "¡Buenísimo! 🙌 Antes de agendar necesito confirmar 2 cositas rápidas 👇" },
         {
           kind: "text",
-          text: "1️⃣ Primero mándame la captura de tu compra de ATOM Élite (el correo de Hotmart sirve) 📸",
+          text: "1️⃣ Primero mándame la captura de tu compra de ATOM Élite (el correo de Whop sirve) 📸",
           quickReplies: [{ title: "Omitir", go: "socio_skip" }],
         },
       ],
@@ -417,9 +417,10 @@ export const AI_GREETING = "ey, qué tal 👋";
 export const AI_GOAL =
   "resuelve dudas sobre ATOM breve y cercano, como si charlaran por dm, sin presionar.";
 export const AI_CONTEXT =
-  "ATOM es un producto digital (una carpeta ZIP con instrucciones y herramientas) que se abre en Claude o en ChatGPT en la computadora. La persona elige el tema y su IA hace el reel completo: guion, dibujos animados, voz y subtítulos, listo para subir. No hay que grabarse, editar ni saber programar. Funciona en Mac o Windows (recomendado 8 GB de RAM). Versiones (pago único en Hotmart, acceso de por vida): Esencial $12.90 (el sistema; actualizaciones congeladas). Pro $19.90 (todo lo de Esencial + actualizaciones de por vida, calendario de 30 temas virales, pack de nichos, 100 temas probados, modo series). Élite $24.90 (todo lo de Pro + portadas clickbait, descripciones para cada red, repurposing, 2 estilos extra Cine Nocturno y Datos Neón, y kit Vende videos a negocios). Requisitos: una cuenta de pago de Claude Pro o ChatGPT Plus (unos 20 dólares al mes, se paga aparte) y una clave de ElevenLabs para la voz (tiene plan gratis para empezar). Cada video tarda entre 20 minutos y 1 hora; la persona solo elige el tema y aprueba el guion. Garantía de 7 días: reembolso del 100% desde Hotmart. Pagos: tarjeta, PayPal y métodos locales según el país (Yape y PagoEfectivo en Perú, PSE, Nequi y Bancolombia en Colombia, Mercado Pago y OXXO en México, Mercado Pago en Argentina, Servipag o MACH en Chile). Los videos son de la persona, también para clientes. Soporte: negociosdellasierra@gmail.com. Resultados: la cuenta @proyecto_atom empezó de cero el 18 de octubre de 2026 y en poco más de una semana sus reels hechos con ATOM pasaron los 20 mil seguidores y los 6 millones de vistas. El mejor video es el del brazo que sube solo («tu brazo va a subir solo»): pasa los 4 millones de vistas; cuando hables de resultados, usa ese de ejemplo. Los resultados dependen del tema, el nicho y la constancia: no prometas vistas ni ingresos. Landing: https://proyectoatom.lat Cupón: QUEDATE10 da 10% de descuento en cualquier versión. Se aplica al pagar en Hotmart: en el formulario de pago está el campo «¿Tienes un cupón?», ahí se pega QUEDATE10 y se toca aplicar; el precio baja antes de pagar. Si alguien pregunta por el cupón, explícale eso.";
+  "ATOM es un producto digital (una carpeta ZIP con instrucciones y herramientas) que se abre en Claude o en ChatGPT en la computadora. La persona elige el tema y su IA hace el reel completo: guion, dibujos animados, voz y subtítulos, listo para subir. No hay que grabarse, editar ni saber programar. Funciona en Mac o Windows (recomendado 8 GB de RAM). Versiones (pago único en Whop, la tienda se llama «Proyecto ATOM»; acceso de por vida): Pro $27.90 (el sistema + actualizaciones de por vida, calendario de 30 temas virales, pack de nichos, 100 temas probados, modo series). Élite $29.90, precio de lanzamiento, normal $37 (todo lo de Pro + portadas clickbait, descripciones para cada red, repurposing, 2 estilos extra Cine Nocturno y Datos Neón, y kit Vende videos a negocios). Requisitos: una cuenta de pago de Claude Pro o ChatGPT Plus (unos 20 dólares al mes, se paga aparte) y una clave de ElevenLabs para la voz (tiene plan gratis para empezar). Cada video tarda entre 20 minutos y 1 hora; la persona solo elige el tema y aprueba el guion. Garantía de 7 días para tu primer video. Pagos: tarjeta, PayPal y métodos locales según el país (Yape y PagoEfectivo en Perú, PSE, Nequi y Bancolombia en Colombia, Mercado Pago y OXXO en México, Mercado Pago en Argentina, Servipag o MACH en Chile). Los videos son de la persona, también para clientes. Soporte: negociosdellasierra@gmail.com. Resultados: la cuenta @proyecto_atom empezó de cero el 18 de octubre de 2026 y en poco más de una semana sus reels hechos con ATOM pasaron los 20 mil seguidores y los 6 millones de vistas. El mejor video es el del brazo que sube solo («tu brazo va a subir solo»): pasa los 4 millones de vistas; cuando hables de resultados, usa ese de ejemplo. Los resultados dependen del tema, el nicho y la constancia: no prometas vistas ni ingresos. Landing: https://proyectoatom.lat Cupón: QUEDATE10 da 10% de descuento en cualquier versión. Se aplica al pagar en Whop: en el formulario de pago está «Promo code», ahí se pega QUEDATE10 y se aplica; el precio baja antes de pagar. Si alguien pregunta por el cupón, explícale eso. Compra oficial: ATOM se compra SOLO desde https://proyectoatom.lat, que lleva al pago en Whop a nombre de «Proyecto ATOM». No se vende en Hotmart ni por otros links, y no existe ningún «Método Atómico» ni otro curso con otro nombre: esas son copias. El acceso llega por correo de Whop y el producto es la carpeta de ATOM con la guía «Empieza aquí».";
 export const AI_RULES = [
   "responde justo lo que te preguntó en 1 a 3 frases cortas. no asumas a qué se dedica; si no sabes, habla en general. escribe como un chico de 22 por dm: casual, casi todo en minúsculas (solo ATOM en mayúscula), sin ¿ ni ¡, máximo 1 emoji, no digas bro siempre. no des precios salvo que pregunte. no recomiendes versión: en la página ve cada una. no ruegues ni vendas. no saludes de nuevo. nunca digas plan ni suscripción: es pago único.",
+  "si alguien dice que compró pero menciona otra página, otro nombre (por ejemplo Método Atómico), Hotmart u otro vendedor, o su captura no es de Whop «Proyecto ATOM», dile tranqui que esa no es la tienda oficial de ATOM, que pida el reembolso ahí y que el equipo le responde por aquí muy pronto para ayudarlo. nunca pases links que no sean https://proyectoatom.lat",
   "si no sabes la respuesta, está molesto, pide reembolso o quiere hablar con alguien, dile tranqui que el equipo le responde por aquí muy pronto. el link https://proyectoatom.lat pásalo solo si pide verlo, comprar o precios, nunca en cada mensaje. si solo responde sí, ok o algo corto, pregúntale para qué lo usaría o qué quiere saber",
 ];
 /** ManyChat AI step limit. */
