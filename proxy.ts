@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { isFromBlockedSite } from "@/lib/security/blocked-sites";
 
 const PROTECTED_PREFIXES = ["/dashboard", "/automations", "/logs", "/settings", "/atom"];
 
@@ -12,6 +13,11 @@ function hasSessionCookie(request: NextRequest): boolean {
 }
 
 export function proxy(request: NextRequest) {
+  // Banned copycat sites get nothing: no files, no APIs, no pages.
+  if (isFromBlockedSite(request.headers)) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+
   const pathname = request.nextUrl.pathname;
   const isProtected = PROTECTED_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
@@ -40,5 +46,8 @@ export const config = {
     "/settings/:path*",
     "/atom/:path*",
     "/login",
+    // Any path, but only when the request comes from a banned site (cheap: no proxy run otherwise).
+    { source: "/:path*", has: [{ type: "header", key: "referer", value: ".*metodoatomico.*" }] },
+    { source: "/:path*", has: [{ type: "header", key: "origin", value: ".*metodoatomico.*" }] },
   ],
 };
